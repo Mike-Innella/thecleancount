@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { IconButton, Text } from 'react-native-paper';
 
 import { Screen } from '../components/Screen';
@@ -38,6 +39,8 @@ export function HomeScreen({ state, onOpenSettings }: HomeScreenProps) {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const ambientTopDrift = useRef(new Animated.Value(0)).current;
   const ambientBottomDrift = useRef(new Animated.Value(0)).current;
+  const ambientTopPulse = useRef(new Animated.Value(0)).current;
+  const ambientBottomPulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (diff.totalDays === displayDays) {
@@ -89,14 +92,48 @@ export function HomeScreen({ state, onOpenSettings }: HomeScreenProps) {
       ]),
     );
 
+    const topPulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ambientTopPulse, {
+          toValue: 1,
+          duration: 22000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ambientTopPulse, {
+          toValue: 0,
+          duration: 22000,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    const bottomPulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ambientBottomPulse, {
+          toValue: 1,
+          duration: 26000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ambientBottomPulse, {
+          toValue: 0,
+          duration: 26000,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
     topLoop.start();
     bottomLoop.start();
+    topPulseLoop.start();
+    bottomPulseLoop.start();
 
     return () => {
       topLoop.stop();
       bottomLoop.stop();
+      topPulseLoop.stop();
+      bottomPulseLoop.stop();
     };
-  }, [ambientBottomDrift, ambientTopDrift]);
+  }, [ambientBottomDrift, ambientBottomPulse, ambientTopDrift, ambientTopPulse]);
 
   const translateY = fadeAnim.interpolate({
     inputRange: [0, 1],
@@ -110,44 +147,64 @@ export function HomeScreen({ state, onOpenSettings }: HomeScreenProps) {
       {
         translateX: ambientTopDrift.interpolate({
           inputRange: [0, 1],
-          outputRange: [-7, 7],
+          outputRange: [-3, 3],
         }),
       },
       {
         translateY: ambientTopDrift.interpolate({
           inputRange: [0, 1],
-          outputRange: [-5, 5],
+          outputRange: [-2, 2],
         }),
       },
       {
         scale: ambientTopDrift.interpolate({
           inputRange: [0, 1],
-          outputRange: [1, 1.025],
+          outputRange: [1, 1.008],
+        }),
+      },
+      {
+        scale: ambientTopPulse.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.012],
         }),
       },
     ],
+    opacity: ambientTopPulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.985, 1],
+    }),
   };
   const ambientBottomDriftStyle = {
     transform: [
       {
         translateX: ambientBottomDrift.interpolate({
           inputRange: [0, 1],
-          outputRange: [6, -6],
+          outputRange: [3, -3],
         }),
       },
       {
         translateY: ambientBottomDrift.interpolate({
           inputRange: [0, 1],
-          outputRange: [5, -5],
+          outputRange: [2, -2],
         }),
       },
       {
         scale: ambientBottomDrift.interpolate({
           inputRange: [0, 1],
-          outputRange: [1, 1.02],
+          outputRange: [1, 1.008],
+        }),
+      },
+      {
+        scale: ambientBottomPulse.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.012],
         }),
       },
     ],
+    opacity: ambientBottomPulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.985, 1],
+    }),
   };
 
   return (
@@ -156,6 +213,13 @@ export function HomeScreen({ state, onOpenSettings }: HomeScreenProps) {
       <Animated.View pointerEvents="none" style={[styles.ambientTop, ambientTopDriftStyle]} />
       <Animated.View pointerEvents="none" style={[styles.ambientBottomHalo, ambientBottomDriftStyle]} />
       <Animated.View pointerEvents="none" style={[styles.ambientBottom, ambientBottomDriftStyle]} />
+      <BlurView
+        pointerEvents="none"
+        style={styles.ambientDiffusion}
+        intensity={58}
+        tint="dark"
+        experimentalBlurMethod="dimezisBlurView"
+      />
 
       <View style={styles.topRow}>
         <Text style={styles.topLine}>{topLine}</Text>
@@ -198,79 +262,81 @@ const styles = StyleSheet.create({
   screen: {
     overflow: 'hidden',
   },
+  ambientDiffusion: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(9, 14, 24, 0.28)',
+  },
   ambientTop: {
     position: 'absolute',
-    top: -220,
+    top: -600,
     alignSelf: 'center',
-    width: 540,
-    height: 540,
-    borderRadius: 270,
-    backgroundColor: theme.colors.cardGlow,
-    opacity: 0.022,
-    borderWidth: 1,
-    borderColor: '#CFE0FF1A',
-    shadowColor: '#BFD8FF',
+    left: -260,
+    width: 700,
+    height: 700,
+    borderRadius: 350,
+    backgroundColor: '#1C2B46',
+    opacity: 0.0012,
+    shadowColor: '#2A3B59',
     shadowOffset: {
       width: 0,
       height: 0,
     },
-    shadowOpacity: 0.14,
-    shadowRadius: 42,
-    elevation: 6,
+    shadowOpacity: 0.065,
+    shadowRadius: 84,
+    elevation: 0,
   },
   ambientTopHalo: {
     position: 'absolute',
-    top: -270,
+    top: -690,
     alignSelf: 'center',
-    width: 640,
-    height: 640,
-    borderRadius: 320,
-    backgroundColor: '#9CC4FF',
-    opacity: 0.008,
-    shadowColor: '#CDE2FF',
+    left: -320,
+    width: 860,
+    height: 860,
+    borderRadius: 430,
+    backgroundColor: '#223552',
+    opacity: 0.0008,
+    shadowColor: '#324867',
     shadowOffset: {
       width: 0,
       height: 0,
     },
-    shadowOpacity: 0.14,
-    shadowRadius: 56,
+    shadowOpacity: 0.05,
+    shadowRadius: 92,
   },
   ambientBottom: {
     position: 'absolute',
-    bottom: -250,
-    right: -120,
-    width: 420,
-    height: 420,
-    borderRadius: 210,
-    backgroundColor: '#52D6B7',
-    opacity: 0.02,
-    borderWidth: 1,
-    borderColor: '#CEFFF51A',
-    shadowColor: '#BFFFF1',
+    bottom: -560,
+    right: -320,
+    width: 560,
+    height: 560,
+    borderRadius: 280,
+    backgroundColor: '#1B3A37',
+    opacity: 0.0011,
+    shadowColor: '#2D504C',
     shadowOffset: {
       width: 0,
       height: 0,
     },
-    shadowOpacity: 0.13,
-    shadowRadius: 36,
-    elevation: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 80,
+    elevation: 0,
   },
   ambientBottomHalo: {
     position: 'absolute',
-    bottom: -300,
-    right: -165,
-    width: 520,
-    height: 520,
-    borderRadius: 260,
-    backgroundColor: '#7BF0DA',
-    opacity: 0.007,
-    shadowColor: '#C8FFF5',
+    bottom: -680,
+    right: -420,
+    width: 760,
+    height: 760,
+    borderRadius: 380,
+    backgroundColor: '#21433F',
+    opacity: 0.0007,
+    shadowColor: '#335A55',
     shadowOffset: {
       width: 0,
       height: 0,
     },
-    shadowOpacity: 0.12,
-    shadowRadius: 48,
+    shadowOpacity: 0.046,
+    shadowRadius: 88,
   },
   topRow: {
     flexDirection: 'row',
