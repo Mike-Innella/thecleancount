@@ -1,6 +1,10 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
+import {
+  DEFAULT_GENTLE_AFFIRMATION,
+  GENTLE_AFFIRMATIONS,
+} from '../content/affirmations';
 import { diffFromStart } from '../utils/time';
 
 const DAILY_REMINDER_CHANNEL_ID = 'daily-clean-reminders';
@@ -9,19 +13,6 @@ const DAYS_TO_SCHEDULE = 365;
 
 export const DEFAULT_DAILY_REMINDER_HOUR = 9;
 export const DEFAULT_DAILY_REMINDER_MINUTE = 0;
-
-const GENTLE_AFFIRMATIONS = [
-  'Breathe. You are doing enough for today.',
-  'Small steady steps still move you forward.',
-  'Your calm effort is creating real change.',
-  'You are allowed to go gently and keep going.',
-  'Today counts, even if it feels quiet.',
-  'You are building trust with yourself.',
-  'One choice at a time is more than enough.',
-  'You are safe to keep this simple.',
-  'A gentle pace is still progress.',
-  'You are meeting this day with strength.',
-];
 
 let configured = false;
 let sessionAffirmations = [...GENTLE_AFFIRMATIONS];
@@ -78,9 +69,10 @@ const getNextReminderBase = (from: Date, hour: number, minute: number): Date => 
 
 const getAffirmation = (dayCount: number): string => {
   if (sessionAffirmations.length === 0) {
-    return 'One steady day at a time.';
+    return DEFAULT_GENTLE_AFFIRMATION;
   }
-  return sessionAffirmations[dayCount % sessionAffirmations.length];
+  const safeDayCount = Number.isFinite(dayCount) ? Math.max(0, Math.floor(dayCount)) : 0;
+  return sessionAffirmations[safeDayCount % sessionAffirmations.length];
 };
 
 const buildReminderContent = (cleanStartISO: string, triggerDate: Date, displayName?: string) => {

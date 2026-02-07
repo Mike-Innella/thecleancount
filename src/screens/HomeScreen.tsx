@@ -4,6 +4,7 @@ import { BlurView } from 'expo-blur';
 import { IconButton, Text } from 'react-native-paper';
 
 import { Screen } from '../components/Screen';
+import { getAffirmationForDayNumber, getLocalCalendarDayNumber } from '../content/affirmations';
 import { theme } from '../theme';
 import { AppState } from '../types';
 import { diffFromStart } from '../utils/time';
@@ -141,6 +142,10 @@ export function HomeScreen({ state, onOpenSettings }: HomeScreenProps) {
   });
 
   const topLine = state?.displayName ? `Hi ${state.displayName}` : 'The Clean Count';
+  const supportiveAffirmation = useMemo(() => {
+    const localDayNumber = getLocalCalendarDayNumber(now);
+    return getAffirmationForDayNumber(localDayNumber);
+  }, [now]);
   const numberSize = width < 380 ? 88 : 102;
   const ambientTopDriftStyle = {
     transform: [
@@ -250,7 +255,7 @@ export function HomeScreen({ state, onOpenSettings }: HomeScreenProps) {
 
           <View style={styles.supportiveWrap}>
             <View style={styles.supportiveDot} />
-            <Text style={styles.supportiveLine}>One steady day at a time.</Text>
+            <Text style={styles.supportiveLine}>{supportiveAffirmation}</Text>
           </View>
         </View>
       </View>
