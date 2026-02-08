@@ -3,7 +3,7 @@
     "name": "The Clean Count",
     "slug": "the-clean-count",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,

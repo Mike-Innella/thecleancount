@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  Easing,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,11 +10,14 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { BlurView } from 'expo-blur';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Modal, Portal, Text, TextInput, TouchableRipple } from 'react-native-paper';
 
 import { PrimaryButton } from '../components/PrimaryButton';
 import { theme } from '../theme';
+
+const AMBIENT_EASING = Easing.inOut(Easing.sin);
 
 type OnboardingSubmitPayload = {
   cleanStartISO: string;
@@ -37,8 +41,10 @@ const normalizeDateToLocalNoonISO = (value: Date): string => {
 };
 
 export function OnboardingScreen({ onSubmit }: OnboardingScreenProps) {
-  const { height } = useWindowDimensions();
+  const { height, width } = useWindowDimensions();
   const isSmallHeight = height < 700;
+  const isLandscape = width > height;
+  const shouldTopAlignContent = isSmallHeight || isLandscape;
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [displayName, setDisplayName] = useState('');
@@ -49,6 +55,10 @@ export function OnboardingScreen({ onSubmit }: OnboardingScreenProps) {
   const [iosDraftDate, setIosDraftDate] = useState<Date>(new Date());
 
   const entryAnim = useRef(new Animated.Value(0)).current;
+  const ambientTopDrift = useRef(new Animated.Value(0)).current;
+  const ambientBottomDrift = useRef(new Animated.Value(0)).current;
+  const ambientTopPulse = useRef(new Animated.Value(0)).current;
+  const ambientBottomPulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(entryAnim, {
@@ -57,6 +67,88 @@ export function OnboardingScreen({ onSubmit }: OnboardingScreenProps) {
       useNativeDriver: true,
     }).start();
   }, [entryAnim]);
+
+  useEffect(() => {
+    const topLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ambientTopDrift, {
+          toValue: 1,
+          duration: 18000,
+          easing: AMBIENT_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ambientTopDrift, {
+          toValue: 0,
+          duration: 18000,
+          easing: AMBIENT_EASING,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    const bottomLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ambientBottomDrift, {
+          toValue: 1,
+          duration: 22000,
+          easing: AMBIENT_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ambientBottomDrift, {
+          toValue: 0,
+          duration: 22000,
+          easing: AMBIENT_EASING,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    const topPulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ambientTopPulse, {
+          toValue: 1,
+          duration: 26000,
+          easing: AMBIENT_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ambientTopPulse, {
+          toValue: 0,
+          duration: 26000,
+          easing: AMBIENT_EASING,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    const bottomPulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ambientBottomPulse, {
+          toValue: 1,
+          duration: 30000,
+          easing: AMBIENT_EASING,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ambientBottomPulse, {
+          toValue: 0,
+          duration: 30000,
+          easing: AMBIENT_EASING,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    topLoop.start();
+    bottomLoop.start();
+    topPulseLoop.start();
+    bottomPulseLoop.start();
+
+    return () => {
+      topLoop.stop();
+      bottomLoop.stop();
+      topPulseLoop.stop();
+      bottomPulseLoop.stop();
+    };
+  }, [ambientBottomDrift, ambientBottomPulse, ambientTopDrift, ambientTopPulse]);
 
   const animatedCardStyle = useMemo(
     () => ({
@@ -110,17 +202,92 @@ export function OnboardingScreen({ onSubmit }: OnboardingScreenProps) {
   const isDateFocused = showAndroidPicker || showIOSPickerModal;
   const isButtonDisabled = !selectedDate || isSaving;
   const cardTopPadding = isSmallHeight ? 18 : 22;
-  const topBias = isSmallHeight ? 24 : Math.round(height * 0.08);
+  const topBias = shouldTopAlignContent ? theme.spacing.s16 : Math.round(height * 0.08);
+  const ambientTopDriftStyle = {
+    transform: [
+      {
+        translateX: ambientTopDrift.interpolate({
+          inputRange: [0, 1],
+          outputRange: [-10, 10],
+        }),
+      },
+      {
+        translateY: ambientTopDrift.interpolate({
+          inputRange: [0, 1],
+          outputRange: [-9, 9],
+        }),
+      },
+      {
+        scale: ambientTopDrift.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.014],
+        }),
+      },
+      {
+        scale: ambientTopPulse.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.03],
+        }),
+      },
+    ],
+    opacity: ambientTopPulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.5, 0.66],
+    }),
+  };
+  const ambientBottomDriftStyle = {
+    transform: [
+      {
+        translateX: ambientBottomDrift.interpolate({
+          inputRange: [0, 1],
+          outputRange: [10, -10],
+        }),
+      },
+      {
+        translateY: ambientBottomDrift.interpolate({
+          inputRange: [0, 1],
+          outputRange: [8, -8],
+        }),
+      },
+      {
+        scale: ambientBottomDrift.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.014],
+        }),
+      },
+      {
+        scale: ambientBottomPulse.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.03],
+        }),
+      },
+    ],
+    opacity: ambientBottomPulse.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.46, 0.62],
+    }),
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
-      <View style={styles.glow} />
+      <Animated.View pointerEvents="none" style={[styles.ambientTopHalo, ambientTopDriftStyle]} />
+      <Animated.View pointerEvents="none" style={[styles.ambientTop, ambientTopDriftStyle]} />
+      <Animated.View pointerEvents="none" style={[styles.ambientBottomHalo, ambientBottomDriftStyle]} />
+      <Animated.View pointerEvents="none" style={[styles.ambientBottom, ambientBottomDriftStyle]} />
+      <BlurView
+        pointerEvents="none"
+        style={styles.ambientDiffusion}
+        intensity={58}
+        tint="dark"
+        experimentalBlurMethod="dimezisBlurView"
+      />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flexOne}>
         <ScrollView
           keyboardShouldPersistTaps="handled"
           bounces={false}
           contentContainerStyle={[
             styles.scrollContent,
+            shouldTopAlignContent && styles.scrollContentTopAligned,
             {
               minHeight: height,
               paddingTop: topBias,
@@ -246,15 +413,75 @@ const styles = StyleSheet.create({
   flexOne: {
     flex: 1,
   },
-  glow: {
+  ambientTop: {
     position: 'absolute',
-    top: '20%',
+    top: -320,
     alignSelf: 'center',
-    width: 520,
-    height: 520,
-    borderRadius: 260,
-    opacity: 0.12,
-    backgroundColor: '#2E6BFF',
+    left: -120,
+    width: 560,
+    height: 560,
+    borderRadius: 280,
+    backgroundColor: 'rgba(86, 132, 255, 0.28)',
+    shadowColor: '#4F7BFF',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.16,
+    shadowRadius: 90,
+  },
+  ambientTopHalo: {
+    position: 'absolute',
+    top: -430,
+    alignSelf: 'center',
+    left: -180,
+    width: 700,
+    height: 700,
+    borderRadius: 350,
+    backgroundColor: 'rgba(70, 110, 220, 0.14)',
+    shadowColor: '#446BCB',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.13,
+    shadowRadius: 98,
+  },
+  ambientBottom: {
+    position: 'absolute',
+    bottom: -300,
+    right: -170,
+    width: 500,
+    height: 500,
+    borderRadius: 250,
+    backgroundColor: 'rgba(64, 199, 166, 0.22)',
+    shadowColor: '#3BAF93',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 86,
+  },
+  ambientBottomHalo: {
+    position: 'absolute',
+    bottom: -420,
+    right: -280,
+    width: 640,
+    height: 640,
+    borderRadius: 320,
+    backgroundColor: 'rgba(51, 160, 137, 0.12)',
+    shadowColor: '#2E8F78',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 96,
+  },
+  ambientDiffusion: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(9, 14, 24, 0.2)',
   },
   scrollContent: {
     flexGrow: 1,
@@ -262,6 +489,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.s16,
     paddingBottom: theme.spacing.s24,
+  },
+  scrollContentTopAligned: {
+    justifyContent: 'flex-start',
   },
   card: {
     width: '92%',
