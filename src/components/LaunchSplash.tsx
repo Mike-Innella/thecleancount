@@ -6,19 +6,15 @@ import { BlurView } from 'expo-blur';
 import { AppTheme, useAppTheme } from '../theme';
 import { ThreeRippleSurface } from './ThreeRippleSurface';
 
-type SplashVariant = 'launch' | 'install';
-
 type LaunchSplashProps = {
   visible: boolean;
   onExited?: () => void;
-  variant?: SplashVariant;
 };
 
-export function LaunchSplash({ visible, onExited, variant = 'launch' }: LaunchSplashProps) {
+export function LaunchSplash({ visible, onExited }: LaunchSplashProps) {
   const theme = useAppTheme();
   const isLightMode = theme.colors.bg === '#F3F6FB';
   const styles = useMemo(() => createStyles(theme, isLightMode), [isLightMode, theme]);
-  const isInstallVariant = variant === 'install';
 
   const dropProgress = useRef(new Animated.Value(0)).current;
   const exitProgress = useRef(new Animated.Value(0)).current;
@@ -27,11 +23,11 @@ export function LaunchSplash({ visible, onExited, variant = 'launch' }: LaunchSp
   useEffect(() => {
     Animated.timing(dropProgress, {
       toValue: 1,
-      duration: isInstallVariant ? 760 : 980,
+      duration: 980,
       easing: Easing.bezier(0.2, 0.85, 0.22, 1),
       useNativeDriver: true,
     }).start();
-  }, [dropProgress, isInstallVariant]);
+  }, [dropProgress]);
 
   useEffect(() => {
     if (visible || hasExitedRef.current) {
@@ -112,19 +108,19 @@ export function LaunchSplash({ visible, onExited, variant = 'launch' }: LaunchSp
       <BlurView
         pointerEvents="none"
         style={styles.sceneBlurVeil}
-        intensity={isInstallVariant ? 34 : 24}
+        intensity={24}
         tint={isLightMode ? 'light' : 'dark'}
         experimentalBlurMethod="dimezisBlurView"
       />
 
       <View style={styles.centerWrap}>
         <View style={styles.rippleStage}>
-          <ThreeRippleSurface variant={variant} isLightMode={isLightMode} />
+          <ThreeRippleSurface isLightMode={isLightMode} />
         </View>
         <BlurView
           pointerEvents="none"
           style={styles.rippleBlur}
-          intensity={isInstallVariant ? 24 : 16}
+          intensity={16}
           tint={isLightMode ? 'light' : 'dark'}
           experimentalBlurMethod="dimezisBlurView"
         />
@@ -135,7 +131,7 @@ export function LaunchSplash({ visible, onExited, variant = 'launch' }: LaunchSp
 
       <View style={styles.labelWrap}>
         <Text style={styles.title}>The Clean Count</Text>
-        <Text style={styles.subtitle}>{isInstallVariant ? 'welcome home' : 'one moment at a time'}</Text>
+        <Text style={styles.subtitle}>one moment at a time</Text>
       </View>
     </Animated.View>
   );

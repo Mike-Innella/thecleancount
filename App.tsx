@@ -1,11 +1,10 @@
 import 'react-native-gesture-handler';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { useColorScheme, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import {
   configureNotificationsAsync,
@@ -18,99 +17,47 @@ import { AppDataProvider, useAppData } from './src/state/AppDataContext';
 import { buildNavigationTheme, buildPaperTheme, getAppTheme, resolveThemeMode } from './src/theme';
 import { LaunchSplash } from './src/components/LaunchSplash';
 
-const INSTALL_SPLASH_SEEN_KEY = '@cleanCount/installSplashSeenV1';
-const LAUNCH_SPLASH_DURATION_MS = 1200;
-const INSTALL_SPLASH_DURATION_MS = 2800;
-type SplashPhase = 'install' | 'launch' | null;
+const LAUNCH_SPLASH_DURATION_MS = 2800;
 
 function AppShell() {
   const { appData, setAppData, isReady } = useAppData();
   const colorScheme = useColorScheme();
-  const [splashPhase, setSplashPhase] = useState<SplashPhase>(null);
-  const [isSplashVisible, setIsSplashVisible] = useState(false);
-  const [isSplashMounted, setIsSplashMounted] = useState(false);
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
+  const [isSplashMounted, setIsSplashMounted] = useState(true);
   const [minimumSplashElapsed, setMinimumSplashElapsed] = useState(false);
-  const [nextSplashPhase, setNextSplashPhase] = useState<SplashPhase>(null);
 
   const resolvedMode = resolveThemeMode(appData.settings.themePreference, colorScheme);
   const appTheme = useMemo(() => getAppTheme(resolvedMode), [resolvedMode]);
   const paperTheme = useMemo(() => buildPaperTheme(appTheme, resolvedMode), [appTheme, resolvedMode]);
   const navigationTheme = useMemo(() => buildNavigationTheme(appTheme, resolvedMode), [appTheme, resolvedMode]);
 
-  const startSplash = useCallback((phase: Exclude<SplashPhase, null>) => {
-    setSplashPhase(phase);
-    setNextSplashPhase(null);
-    setMinimumSplashElapsed(false);
-    setIsSplashMounted(true);
-    setIsSplashVisible(true);
-  }, []);
-
   useEffect(() => {
     void configureNotificationsAsync();
   }, []);
 
   useEffect(() => {
-    let isCancelled = false;
-
-    const prepareSplash = async () => {
-      try {
-        const seenInstallSplash = await AsyncStorage.getItem(INSTALL_SPLASH_SEEN_KEY);
-        if (isCancelled) {
-          return;
-        }
-
-        if (seenInstallSplash === '1') {
-          startSplash('launch');
-          return;
-        }
-
-        startSplash('install');
-        void AsyncStorage.setItem(INSTALL_SPLASH_SEEN_KEY, '1');
-      } catch {
-        if (!isCancelled) {
-          startSplash('launch');
-        }
-      }
-    };
-
-    void prepareSplash();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [startSplash]);
-
-  useEffect(() => {
-    if (!isSplashMounted || !splashPhase) {
+    if (!isSplashMounted) {
       return;
     }
 
-    const durationMs = splashPhase === 'install' ? INSTALL_SPLASH_DURATION_MS : LAUNCH_SPLASH_DURATION_MS;
     const timeoutId = setTimeout(() => {
       setMinimumSplashElapsed(true);
-    }, durationMs);
+    }, LAUNCH_SPLASH_DURATION_MS);
 
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [isSplashMounted, splashPhase]);
+  }, [isSplashMounted]);
 
   useEffect(() => {
-    if (!isSplashMounted || !splashPhase || !isSplashVisible || !minimumSplashElapsed) {
-      return;
-    }
-
-    if (splashPhase === 'install') {
-      setNextSplashPhase('launch');
-      setIsSplashVisible(false);
+    if (!isSplashMounted || !isSplashVisible || !minimumSplashElapsed) {
       return;
     }
 
     if (isReady) {
-      setNextSplashPhase(null);
       setIsSplashVisible(false);
     }
-  }, [isReady, isSplashMounted, isSplashVisible, minimumSplashElapsed, splashPhase]);
+  }, [isReady, isSplashMounted, isSplashVisible, minimumSplashElapsed]);
 
   useEffect(() => {
     if (!appData.settings.dailyReminderEnabled) {
@@ -170,17 +117,9 @@ function AppShell() {
         </NavigationContainer>
         {isSplashMounted ? (
           <LaunchSplash
-            key={splashPhase ?? 'launch'}
-            variant={splashPhase === 'install' ? 'install' : 'launch'}
             visible={isSplashVisible}
             onExited={() => {
-              if (nextSplashPhase === 'launch') {
-                startSplash('launch');
-                return;
-              }
-
               setIsSplashMounted(false);
-              setSplashPhase(null);
             }}
           />
         ) : null}
