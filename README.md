@@ -13,14 +13,14 @@ Minimal, local-first clean-time tracker built with Expo + React Native + TypeScr
   - current day count at trigger time
   - gentle affirmation message
 - Affirmations are shuffled on each app start for variety.
-- Local encrypted persistence with no backend and no analytics.
+- Local on-device persistence with no backend and no analytics.
 
 ## Tech Stack
 
 - Expo React Native (`expo`)
 - TypeScript
 - React Navigation native stack
-- `expo-secure-store` for encrypted local state
+- `@react-native-async-storage/async-storage` for local state
 - `expo-notifications` for daily local reminders
 - `@react-native-community/datetimepicker`
 - `react-native-paper`
@@ -52,16 +52,20 @@ Minimal, local-first clean-time tracker built with Expo + React Native + TypeScr
 
 ## Data and Privacy
 
-- All app data is stored locally on-device in SecureStore.
-- Storage key: `clean_count_state_v1`.
+- All app data is stored locally on-device in AsyncStorage.
+- Storage key: `@cleanCount/appData`.
 - Stored fields include:
   - `cleanStartISO`
   - `displayName`
-  - `dailyReminderEnabled`
-  - `dailyReminderHour`
-  - `dailyReminderMinute`
-  - `createdAtISO`
-  - `updatedAtISO`
+  - `checkIns`
+  - `history`
+  - `settings.hardDayModeEnabled`
+  - `settings.hardDayModeAutoSuggest`
+  - `settings.timeDisplayPreference`
+  - `settings.themePreference`
+  - `settings.dailyReminderEnabled`
+  - `settings.dailyReminderHour`
+  - `settings.dailyReminderMinute`
 
 ## Project Structure
 
@@ -69,4 +73,4 @@ Minimal, local-first clean-time tracker built with Expo + React Native + TypeScr
 - `src/navigation/RootNavigator.tsx`: app state orchestration and screen routing
 - `src/screens/*`: onboarding, home, and settings screens
 - `src/notifications/dailyReminder.ts`: notification setup and scheduling
-- `src/storage/secureStore.ts`: local persistence layer
+- `src/storage/storage.ts`: local persistence layer
