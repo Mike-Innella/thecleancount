@@ -59,8 +59,6 @@ Minimal, local-first clean-time tracker built with Expo + React Native + TypeScr
   - `displayName`
   - `checkIns`
   - `history`
-  - `settings.hardDayModeEnabled`
-  - `settings.hardDayModeAutoSuggest`
   - `settings.timeDisplayPreference`
   - `settings.themePreference`
   - `settings.dailyReminderEnabled`

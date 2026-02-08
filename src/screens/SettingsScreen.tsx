@@ -55,6 +55,8 @@ const APPEARANCE_OPTIONS: Array<{ value: ThemePreference; label: string; descrip
   { value: 'light', label: 'Light', description: 'Uses the light color palette.' },
   { value: 'dark', label: 'Dark', description: 'Uses the dark color palette.' },
 ];
+const REMINDER_SYNC_FAILED_MESSAGE =
+  'Daily reminder could not be scheduled. Check notification permissions and battery settings, then try again.';
 
 export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const { appData, setAppData } = useAppData();
@@ -169,7 +171,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
       }));
 
       if (enabled && !shouldEnable) {
-        setNotificationMessage('Notification permission is off. Enable it in system settings to receive reminders.');
+        setNotificationMessage(REMINDER_SYNC_FAILED_MESSAGE);
       }
     } finally {
       setIsUpdatingReminder(false);
@@ -215,7 +217,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
       }));
 
       if (appData.settings.dailyReminderEnabled && !shouldStayEnabled) {
-        setNotificationMessage('Notification permission is off. Enable it in system settings to receive reminders.');
+        setNotificationMessage(REMINDER_SYNC_FAILED_MESSAGE);
       }
     } finally {
       setIsUpdatingReminder(false);
@@ -428,52 +430,6 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
 
         <Card style={styles.cardGap}>
           <Text variant="titleMedium" style={styles.sectionTitle}>
-            Hard Day preferences
-          </Text>
-
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextWrap}>
-              <Text style={styles.label}>Hard Day Mode</Text>
-              <Text style={styles.hint}>Simplifies the app for rough days.</Text>
-            </View>
-            <Switch
-              value={appData.settings.hardDayModeEnabled}
-              onValueChange={(value) => {
-                setAppData((prev) => ({
-                  ...prev,
-                  settings: {
-                    ...prev.settings,
-                    hardDayModeEnabled: value,
-                  },
-                }));
-              }}
-            />
-          </View>
-
-          <View style={styles.preferenceDivider} />
-
-          <View style={styles.toggleRow}>
-            <View style={styles.toggleTextWrap}>
-              <Text style={styles.label}>Auto-suggest Hard Day Mode</Text>
-              <Text style={styles.hint}>Shows a gentle suggestion when check-ins indicate a rough day.</Text>
-            </View>
-            <Switch
-              value={appData.settings.hardDayModeAutoSuggest}
-              onValueChange={(value) => {
-                setAppData((prev) => ({
-                  ...prev,
-                  settings: {
-                    ...prev.settings,
-                    hardDayModeAutoSuggest: value,
-                  },
-                }));
-              }}
-            />
-          </View>
-        </Card>
-
-        <Card style={styles.cardGap}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
             Time display preferences
           </Text>
           <Text style={styles.hint}>Choose how your clean time appears on Home.</Text>
@@ -599,11 +555,6 @@ const createStyles = (theme: AppTheme) =>
       color: theme.colors.textMuted,
       ...theme.typography.body,
       marginTop: 2,
-    },
-    preferenceDivider: {
-      height: 1,
-      marginVertical: theme.spacing.s16,
-      backgroundColor: theme.colors.divider,
     },
     actionButton: {
       marginTop: theme.spacing.s12,

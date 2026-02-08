@@ -9,14 +9,11 @@ export type DailyCheckIn = {
 };
 
 export type UserSettings = {
-  hardDayModeEnabled: boolean;
-  hardDayModeAutoSuggest: boolean;
   timeDisplayPreference?: TimeDisplayPreference;
   themePreference?: ThemePreference;
   dailyReminderEnabled?: boolean;
   dailyReminderHour?: number;
   dailyReminderMinute?: number;
-  lastHardDaySuggestAt?: string;
 };
 
 export type AppData = {

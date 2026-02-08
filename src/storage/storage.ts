@@ -90,14 +90,6 @@ const parseAppData = (value: unknown): AppData | null => {
     return null;
   }
 
-  const hardDayModeEnabled =
-    typeof settings.hardDayModeEnabled === 'boolean'
-      ? settings.hardDayModeEnabled
-      : defaults.settings.hardDayModeEnabled;
-  const hardDayModeAutoSuggest =
-    typeof settings.hardDayModeAutoSuggest === 'boolean'
-      ? settings.hardDayModeAutoSuggest
-      : defaults.settings.hardDayModeAutoSuggest;
   const timeDisplayPreference = VALID_TIME_DISPLAY_PREFERENCES.includes(
     settings.timeDisplayPreference as TimeDisplayPreference,
   )
@@ -129,14 +121,11 @@ const parseAppData = (value: unknown): AppData | null => {
     displayName: normalizeDisplayName(value.displayName),
     checkIns: parseCheckIns(value.checkIns),
     settings: {
-      hardDayModeEnabled,
-      hardDayModeAutoSuggest,
       timeDisplayPreference,
       themePreference,
       dailyReminderEnabled: dailyReminderEnabledCandidate ?? defaults.settings.dailyReminderEnabled,
       dailyReminderHour: dailyReminderHourCandidate ?? DEFAULT_DAILY_REMINDER_HOUR,
       dailyReminderMinute: dailyReminderMinuteCandidate ?? DEFAULT_DAILY_REMINDER_MINUTE,
-      lastHardDaySuggestAt: isValidISO(settings.lastHardDaySuggestAt) ? settings.lastHardDaySuggestAt : undefined,
     },
     history: parseHistory(value.history),
   };
@@ -160,8 +149,6 @@ export function getDefaultAppData(): AppData {
     cleanStartISO: new Date().toISOString(),
     checkIns: [],
     settings: {
-      hardDayModeEnabled: false,
-      hardDayModeAutoSuggest: true,
       timeDisplayPreference: 'days',
       themePreference: 'system',
       dailyReminderEnabled: false,

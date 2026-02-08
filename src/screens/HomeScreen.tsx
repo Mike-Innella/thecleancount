@@ -220,9 +220,8 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
     const localDayNumber = getLocalCalendarDayNumber(now);
     return getAffirmationForDayNumber(localDayNumber);
   }, [now]);
-  const hardDayEnabled = appData.settings.hardDayModeEnabled;
   const numberSize = useMemo(() => {
-    const baseSize = width < 380 ? (hardDayEnabled ? 78 : 88) : hardDayEnabled ? 90 : 102;
+    const baseSize = width < 380 ? 88 : 102;
     const digits = String(timeDisplay.primaryValue).length;
     if (digits >= 4) {
       return Math.max(56, baseSize - 20);
@@ -231,7 +230,7 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
       return Math.max(64, baseSize - 10);
     }
     return baseSize;
-  }, [hardDayEnabled, timeDisplay.primaryValue, width]);
+  }, [timeDisplay.primaryValue, width]);
 
   const ambientTopDriftStyle = {
     transform: [
@@ -336,7 +335,7 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
         </View>
 
         <View style={[styles.centerWrap, isCompactLayout && styles.centerWrapCompact]}>
-          <View style={[styles.heroCard, hardDayEnabled && styles.heroCardHardDay]}>
+          <View style={styles.heroCard}>
             <Text style={styles.kicker}>Current count</Text>
 
             <Animated.Text
@@ -344,14 +343,14 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
                 styles.bigNumber,
                 {
                   fontSize: numberSize,
-                  opacity: hardDayEnabled ? 0.78 : fadeAnim,
+                  opacity: fadeAnim,
                   transform: [{ translateY }],
                 },
               ]}
             >
               {displayValue}
             </Animated.Text>
-            <Text style={[styles.primaryLabel, hardDayEnabled && styles.primaryLabelSoft]}>{timeDisplay.primaryLabel}</Text>
+            <Text style={styles.primaryLabel}>{timeDisplay.primaryLabel}</Text>
 
             <View style={styles.metricDivider} />
             <Text style={styles.secondaryLine}>{timeDisplay.secondaryLine}</Text>
@@ -523,11 +522,6 @@ const createStyles = (theme: AppTheme) => {
       shadowRadius: 28,
       elevation: 8,
     },
-    heroCardHardDay: {
-      paddingTop: theme.spacing.s24,
-      paddingBottom: theme.spacing.s24,
-      borderColor: isLightMode ? '#9FB5DB' : '#2A3E63',
-    },
     kicker: {
       color: theme.colors.textSubtle,
       ...theme.typography.label,
@@ -544,10 +538,6 @@ const createStyles = (theme: AppTheme) => {
       fontWeight: '500',
       marginTop: 2,
       letterSpacing: 0.2,
-    },
-    primaryLabelSoft: {
-      color: theme.colors.textMuted,
-      fontSize: 20,
     },
     metricDivider: {
       width: '100%',

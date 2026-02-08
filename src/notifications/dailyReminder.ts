@@ -106,7 +106,7 @@ export async function configureNotificationsAsync(): Promise<void> {
       shouldShowAlert: true,
       shouldShowBanner: true,
       shouldShowList: true,
-      shouldPlaySound: false,
+      shouldPlaySound: true,
       shouldSetBadge: false,
     }),
   });
@@ -114,7 +114,8 @@ export async function configureNotificationsAsync(): Promise<void> {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(DAILY_REMINDER_CHANNEL_ID, {
       name: 'Daily reminders',
-      importance: Notifications.AndroidImportance.DEFAULT,
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
       vibrationPattern: [0, 180],
       lightColor: '#4A90FF',
     });
@@ -174,47 +175,56 @@ export async function syncDailyReminderNotificationsAsync({
     return false;
   }
 
-  await configureNotificationsAsync();
-  await cancelDailyReminderNotificationsAsync();
+  try {
+    await configureNotificationsAsync();
+    await cancelDailyReminderNotificationsAsync();
 
-  if (!enabled) {
-    return true;
-  }
+    if (!enabled) {
+      return true;
+    }
 
-  const hasPermission = await ensureNotificationsPermissionAsync();
-  if (!hasPermission) {
+    const hasPermission = await ensureNotificationsPermissionAsync();
+    if (!hasPermission) {
+      return false;
+    }
+
+    const reminderTime = normalizeReminderTime(reminderHour, reminderMinute);
+    const now = new Date();
+    const base = getNextReminderBase(now, reminderTime.hour, reminderTime.minute);
+    const scheduleJobs: Array<Promise<string>> = [];
+
+    for (let offset = 0; offset < DAYS_TO_SCHEDULE; offset += 1) {
+      const trigger = new Date(base);
+      trigger.setDate(base.getDate() + offset);
+
+      const content = buildReminderContent(cleanStartISO, trigger, displayName);
+      scheduleJobs.push(
+        Notifications.scheduleNotificationAsync({
+          content: {
+            title: content.title,
+            body: content.body,
+            data: {
+              kind: DAILY_REMINDER_KIND,
+              dayCount: content.dayCount,
+            },
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: trigger,
+            channelId: Platform.OS === 'android' ? DAILY_REMINDER_CHANNEL_ID : undefined,
+          },
+        }),
+      );
+    }
+
+    await Promise.allSettled(scheduleJobs);
+    const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const reminderCount = allScheduled.filter(
+      (request) => request.content.data && request.content.data.kind === DAILY_REMINDER_KIND,
+    ).length;
+
+    return reminderCount > 0;
+  } catch {
     return false;
   }
-
-  const reminderTime = normalizeReminderTime(reminderHour, reminderMinute);
-  const now = new Date();
-  const base = getNextReminderBase(now, reminderTime.hour, reminderTime.minute);
-  const scheduleJobs: Array<Promise<string>> = [];
-
-  for (let offset = 0; offset < DAYS_TO_SCHEDULE; offset += 1) {
-    const trigger = new Date(base);
-    trigger.setDate(base.getDate() + offset);
-
-    const content = buildReminderContent(cleanStartISO, trigger, displayName);
-    scheduleJobs.push(
-      Notifications.scheduleNotificationAsync({
-        content: {
-          title: content.title,
-          body: content.body,
-          data: {
-            kind: DAILY_REMINDER_KIND,
-            dayCount: content.dayCount,
-          },
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: trigger,
-          channelId: Platform.OS === 'android' ? DAILY_REMINDER_CHANNEL_ID : undefined,
-        },
-      }),
-    );
-  }
-
-  await Promise.all(scheduleJobs);
-  return true;
 }
