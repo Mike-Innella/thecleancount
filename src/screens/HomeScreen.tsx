@@ -296,7 +296,6 @@ export function HomeScreen({ navigation, route }: HomeScreenProps) {
       outputRange: [0.48, 0.65],
     }),
   };
-
   return (
     <Screen style={styles.screen}>
       <Animated.View pointerEvents="none" style={[styles.ambientTopHalo, ambientTopDriftStyle]} />

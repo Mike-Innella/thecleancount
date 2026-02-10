@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import { GLView, ExpoWebGLRenderingContext } from 'expo-gl';
-import { Renderer } from 'expo-three';
 import * as THREE from 'three';
 
 type ThreeRippleSurfaceProps = {
@@ -9,18 +8,12 @@ type ThreeRippleSurfaceProps = {
 };
 
 type ThreeSceneRefs = {
-  renderer: Renderer;
+  renderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
   camera: THREE.OrthographicCamera;
   material: THREE.ShaderMaterial;
   geometry: THREE.PlaneGeometry;
   mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
-};
-
-type ExpoThreeRendererCompat = Renderer & {
-  setSize: (width: number, height: number) => void;
-  setClearColor: (color: number, alpha: number) => void;
-  render: (scene: THREE.Scene, camera: THREE.Camera) => void;
 };
 
 const VERTEX_SHADER = `
@@ -51,22 +44,24 @@ float rippleWave(vec2 pos, vec2 source, float elapsed, float speed, float wavele
   float waveRadius = elapsed * speed;
   float travel = waveRadius - distanceToSource;
   float arrival = smoothstep(-0.03, 0.005, travel);
-  float wake = exp(-max(waveRadius - distanceToSource, 0.0) * 7.5);
+  float wake = exp(-max(waveRadius - distanceToSource, 0.0) * 8.4);
   float oscillation = sin(travel * 6.28318530718 / max(wavelength, 0.001));
   return oscillation * arrival * wake * exp(-elapsed * damping);
 }
 
 float heightField(vec2 uv) {
   vec2 pos = toAspect(uv);
-  float cycle = 2.45;
+  float cycle = 2.6;
   float t1 = mod(uTime + 0.00, cycle);
   float t2 = mod(uTime + 0.82, cycle);
   float t3 = mod(uTime + 1.54, cycle);
+  float t4 = mod(uTime + 2.18, cycle);
 
   float height = 0.0;
-  height += rippleWave(pos, vec2(0.00, 0.00), t1, 0.42, 0.11, 0.90) * 0.85;
-  height += rippleWave(pos, vec2(-0.16, 0.09), t2, 0.37, 0.095, 0.95) * 0.63;
-  height += rippleWave(pos, vec2(0.14, -0.12), t3, 0.39, 0.102, 0.92) * 0.58;
+  height += rippleWave(pos, vec2(0.00, 0.00), t1, 0.40, 0.112, 0.84) * 0.86;
+  height += rippleWave(pos, vec2(-0.16, 0.09), t2, 0.36, 0.097, 0.90) * 0.61;
+  height += rippleWave(pos, vec2(0.14, -0.12), t3, 0.38, 0.104, 0.88) * 0.57;
+  height += rippleWave(pos, vec2(0.08, 0.16), t4, 0.34, 0.090, 0.96) * 0.33;
   height += sin((pos.x * 26.0 + pos.y * 19.0) + uTime * 0.55) * 0.003;
 
   return height;
@@ -108,7 +103,7 @@ void main() {
   vec3 color = mix(deepColor, shallowColor, depthMix);
   color += tint * (0.10 + diffuse * 0.42);
   color += tint * fresnel * 0.32;
-  color += vec3(1.0) * specular * (0.24 + 0.18 * (1.0 - uTheme));
+  color += vec3(1.0) * specular * (0.29 + 0.20 * (1.0 - uTheme));
 
   float caustic = pow(clamp(abs(h) * 1.9, 0.0, 1.0), 1.35);
   color += tint * caustic * 0.22;
@@ -174,7 +169,18 @@ export function ThreeRippleSurface({ isLightMode }: ThreeRippleSurfaceProps) {
 
   const onContextCreate = async (gl: ExpoWebGLRenderingContext) => {
     try {
-      const renderer = new Renderer({ gl }) as ExpoThreeRendererCompat;
+      // Minimal Expo GL compatibility canvas for Three.js renderer.
+      const renderer = new THREE.WebGLRenderer({
+        canvas: {
+          width: gl.drawingBufferWidth,
+          height: gl.drawingBufferHeight,
+          style: {},
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          clientHeight: gl.drawingBufferHeight,
+        } as any,
+        context: gl as any,
+      });
       renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
       renderer.setClearColor(0x000000, 0);
 

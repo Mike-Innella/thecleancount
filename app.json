@@ -2,6 +2,7 @@
   "expo": {
     "name": "The Clean Count",
     "slug": "the-clean-count",
+    "scheme": "thecleancount",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/icon.png",

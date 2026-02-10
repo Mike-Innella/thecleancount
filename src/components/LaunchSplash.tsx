@@ -6,6 +6,8 @@ import { BlurView } from 'expo-blur';
 import { AppTheme, useAppTheme } from '../theme';
 import { ThreeRippleSurface } from './ThreeRippleSurface';
 
+export const LAUNCH_SPLASH_EXIT_DURATION_MS = 560;
+
 type LaunchSplashProps = {
   visible: boolean;
   onExited?: () => void;
@@ -36,7 +38,7 @@ export function LaunchSplash({ visible, onExited }: LaunchSplashProps) {
 
     Animated.timing(exitProgress, {
       toValue: 1,
-      duration: 560,
+      duration: LAUNCH_SPLASH_EXIT_DURATION_MS,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start(() => {

@@ -15,9 +15,10 @@ import {
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { AppDataProvider, useAppData } from './src/state/AppDataContext';
 import { buildNavigationTheme, buildPaperTheme, getAppTheme, resolveThemeMode } from './src/theme';
-import { LaunchSplash } from './src/components/LaunchSplash';
+import { LaunchSplash, LAUNCH_SPLASH_EXIT_DURATION_MS } from './src/components/LaunchSplash';
 
-const LAUNCH_SPLASH_DURATION_MS = 2800;
+const SPLASH_TOTAL_DURATION_MS = 2800;
+const SPLASH_HOLD_DURATION_MS = SPLASH_TOTAL_DURATION_MS - LAUNCH_SPLASH_EXIT_DURATION_MS;
 
 function AppShell() {
   const { appData, setAppData, isReady } = useAppData();
@@ -42,7 +43,7 @@ function AppShell() {
 
     const timeoutId = setTimeout(() => {
       setMinimumSplashElapsed(true);
-    }, LAUNCH_SPLASH_DURATION_MS);
+    }, SPLASH_HOLD_DURATION_MS);
 
     return () => {
       clearTimeout(timeoutId);
@@ -50,13 +51,11 @@ function AppShell() {
   }, [isSplashMounted]);
 
   useEffect(() => {
-    if (!isSplashMounted || !isSplashVisible || !minimumSplashElapsed) {
+    if (!isSplashMounted || !isSplashVisible || !minimumSplashElapsed || !isReady) {
       return;
     }
 
-    if (isReady) {
-      setIsSplashVisible(false);
-    }
+    setIsSplashVisible(false);
   }, [isReady, isSplashMounted, isSplashVisible, minimumSplashElapsed]);
 
   useEffect(() => {

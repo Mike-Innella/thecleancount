@@ -267,7 +267,6 @@ export function OnboardingScreen({ onSubmit }: OnboardingScreenProps) {
       outputRange: [0.46, 0.62],
     }),
   };
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
       <Animated.View pointerEvents="none" style={[styles.ambientTopHalo, ambientTopDriftStyle]} />
